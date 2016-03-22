@@ -99,32 +99,32 @@ df.to_csv("predictions/svm_poly.csv", index=False , header=head)
 #
 
 
-##%% Random forests
-#start_time = time.time()
-#rf = RandomForestClassifier(min_samples_leaf=20)
-#rf.fit(X, target)
-#print("--- RF train %s seconds ---" % (time.time() - start_time))
-#
-#print "Random Forest train accuracy:", rf.score(X,target)
-#
-###%% Pickle
-##file_name = 'rf_model'
-##with open(file_name,'wb') as f:
-##    pickle.dump(rf,f) 
-#
-##%% RF test
-#predicted_rf = rf.predict_proba(X_test)
-#predicted_rf = predicted_rf[:,1]
-#submission = np.column_stack((ID, predicted_rf))
-#df = pd.DataFrame(data=submission, columns = head)
-#df['Id'] = df['Id'].astype('int')
-#df.to_csv("predictions/rf.csv", index=False , header=head)
-#
-##%% results
-#print "Vanilla Logistic Regression ROC:", 0.53115
-#print "Random Forest ROC:", 0.82773
-#
-#
+#%% Random forests
+start_time = time.time()
+rf = RandomForestClassifier(min_samples_leaf=20)
+rf.fit(X, target)
+print("--- RF train %s seconds ---" % (time.time() - start_time))
+
+print "Random Forest train accuracy:", rf.score(X,target)
+
+##%% Pickle
+#file_name = 'rf_model'
+#with open(file_name,'wb') as f:
+#    pickle.dump(rf,f) 
+
+#%% RF test
+predicted_rf = rf.predict_proba(X_test)
+predicted_rf = predicted_rf[:,1]
+submission = np.column_stack((ID, predicted_rf))
+df = pd.DataFrame(data=submission, columns = head)
+df['Id'] = df['Id'].astype('int')
+df.to_csv("predictions/rf.csv", index=False , header=head)
+
+#%% results
+print "Vanilla Logistic Regression ROC:", 0.53115
+print "Random Forest ROC:", 0.82773
+
+
 
 
 
