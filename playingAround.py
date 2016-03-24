@@ -41,10 +41,11 @@ head = ['Id', 'Action']
 #%% grid search rf
 print "Start grid search"
 start_time = time.time()
-param_grid = {'n_estimators': np.linspace(100,1000,5).astype(int), \
-'min_samples_split' : [4,5,6,10]}
-gs = GridSearchCV(estimator=RandomForestClassifier(min_samples_leaf=1), \
-param_grid=param_grid)
+param_grid = {'n_estimators': [400,500, 600], \
+'min_samples_leaf' : [1,2,8,16], \
+'min_samples_split' : [2,5,10]}
+gs = GridSearchCV(estimator=RandomForestClassifier(), \
+param_grid=param_grid, scoring='roc_auc')
 gs.fit(X, target)
 print("--- GS RF train %s seconds ---" % (time.time() - start_time))
 

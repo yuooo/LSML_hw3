@@ -1,0 +1,9 @@
+Same set of ID between train and test: Resource
+
+Different between train and test: manager (670 new out of 4689), role_code (18 new out 351)
+
+manager not included in role.
+
+
+Features by importance (decreasing):
+RESOURCE, MGR_ID, ROLE_DEPTNAME, ROLE_FAMILY_DESC, ROLE_ROLLUP_2, ROLE_TITLE, ROLE_CODE, ROLE_ROLLUP_1, ROLE_FAMILY
