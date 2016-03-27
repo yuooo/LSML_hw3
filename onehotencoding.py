@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.grid_search import GridSearchCV
 import time
 from sklearn.svm import SVC
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
 import pandas as pd
 import pickle
@@ -29,19 +30,11 @@ X = dataset[:,1:]
 target = dataset[:,0]
 
 # print X
-sorted_mappings = []
-(num_rows, num_cols) = X.shape
+# sorted_mappings = []
+# (num_rows, num_cols) = X.shape
 
-for i in xrange(num_cols):
-    mapping = {}
-    for j in xrange(num_rows):
-        if X[j][i] not in mapping:
-            mapping[X[j][i]] = 0
-        mapping[X[j][i]] += 1
-    sorted_mapping = [entry[0] for entry in sorted(mapping.items(), key=operator.itemgetter(1), reverse=True)]
-    sorted_mappings.append(sorted_mapping)
-    for j in xrange(num_rows):
-        X[j][i] = int(sorted_mapping.index(X[j][i]))
+enc = OneHotEncoder(handle_unknown='ignore')
+X = enc.fit_transform(X)
 
 # print X
 with open('test.csv') as data_test:
@@ -51,14 +44,9 @@ with open('test.csv') as data_test:
 
 X_test = dataset_test[:,1:]
 
-(num_rows, num_cols) = X_test.shape
 
-for i in xrange(num_cols):
-    for j in xrange(num_rows):
-        if X_test[j][i] in sorted_mappings[i]:
-            X_test[j][i] = int(sorted_mappings[i].index(X_test[j][i]))
-        else:
-            X_test[j][i] = len(sorted_mappings[i])
+# (num_rows, num_cols) = X_test.shape
+X_test = enc.transform(X_test)
 
 ID = (dataset_test[:,0]).astype(int)
 head = ['Id', 'Action']
@@ -76,28 +64,28 @@ def get_proba_one(model, X):
 
 
  # %% grid search rf
-print "Start grid search"
-start_time = time.time()
-param_grid = {'n_estimators': np.linspace(100,1000,5).astype(int), \
-'min_samples_split' : [4,5,6,10]}
-gs = GridSearchCV(estimator=RandomForestClassifier(min_samples_leaf=1), \
-param_grid=param_grid, scoring='roc_auc')
-gs.fit(X, target)
-print("--- GS RF train %s seconds ---" % (time.time() - start_time))
+# print "Start grid search"
+# start_time = time.time()
+# param_grid = {'n_estimators': np.linspace(100,1000,5).astype(int), \
+# 'min_samples_split' : [4,5,6,10]}
+# gs = GridSearchCV(estimator=RandomForestClassifier(min_samples_leaf=1), \
+# param_grid=param_grid, scoring='roc_auc')
+# gs.fit(X, target)
+# print("--- GS RF train %s seconds ---" % (time.time() - start_time))
 
-predicted_gs_rf = get_proba_one(gs, X_test)
-write_submission('predictions/gs_rf_sur.csv', predicted_gs_rf)
+# predicted_gs_rf = get_proba_one(gs, X_test)
+# write_submission('predictions/gs_rf_ohe.csv', predicted_gs_rf)
 
  #%% Best Tuned RF
 
-# start_time = time.time()
-# rf_tuned = RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, \
-# n_estimators = 500)
-# rf_tuned.fit(X,target)
-# print("--- RF tuned train %s seconds ---" % (time.time() - start_time))
+start_time = time.time()
+rf_tuned = RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, \
+n_estimators = 500)
+rf_tuned.fit(X,target)
+print("--- RF tuned train %s seconds ---" % (time.time() - start_time))
 
-# predicted_rf_tuned = get_proba_one(rf_tuned, X_test)
-# write_submission('predictions/rf_tuned_sur.csv', predicted_rf_tuned)
+predicted_rf_tuned = get_proba_one(rf_tuned, X_test)
+write_submission('predictions/rf_tuned_ohe.csv', predicted_rf_tuned)
 
  #%% results
 print "Vanilla Logistic Regression ROC:", 0.53115
