@@ -19,7 +19,7 @@ import os
 #
 #os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
 
-from hw3q3 import write_submission, get_proba_one
+from hw3q3 import write_submission, get_proba_one, print_time
 #%% Load/prepare data
 with open('train.csv') as data_train:
     dataset = np.loadtxt(data_train, delimiter=",", skiprows=1)
@@ -41,13 +41,13 @@ head = ['Id', 'Action']
 #%% grid search rf
 print "Start grid search"
 start_time = time.time()
-param_grid = {'n_estimators': [400,500, 600], \
-'min_samples_leaf' : [1,2,8,16], \
-'min_samples_split' : [2,5,10]}
+param_grid = {'n_estimators': [550, 600, 650, 700, 750], \
+'min_samples_leaf' : [1], \
+'min_samples_split' : [5,6,7,8,9,10]}
 gs = GridSearchCV(estimator=RandomForestClassifier(), \
 param_grid=param_grid, scoring='roc_auc')
 gs.fit(X, target)
-print("--- GS RF train %s seconds ---" % (time.time() - start_time))
+print_time('GS RF', start_time)
 
 predicted_gs_rf = get_proba_one(gs, X_test)
 write_submission('predictions/gs_rf.csv', predicted_gs_rf)
@@ -56,7 +56,7 @@ write_submission('predictions/gs_rf.csv', predicted_gs_rf)
 start_time = time.time()
 rf_tuned = RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, n_estimators = 500)
 rf_tuned.fit(X,target)
-print("--- RF tuned train %s seconds ---" % (time.time() - start_time))
+print_time('RF tuned', start_time)
 
 predicted_rf_tuned = get_proba_one(rf_tuned, X_test)
 write_submission('predictions/rf_tuned.csv', predicted_rf_tuned)

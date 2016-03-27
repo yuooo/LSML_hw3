@@ -12,7 +12,7 @@ import pandas as pd
 import pickle
 import os
 from xgboost import XGBModel
-from hw3q3 import write_submission
+from hw3q3 import write_submission, print_time, get_proba_one
 
 os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
 
@@ -39,25 +39,36 @@ head = ['Id', 'Action']
 start_time = time.time()
 xgbm = XGBModel()
 xgbm.fit(X, target)
-print("--- XGBM %s seconds ---" % (time.time() - start_time))
+t = time.time() - start_time
+print("--- XGBM  %s hours %s minutes %s seconds ---" % (t//3600, (t%3600)//60, t%60))
 
 predicted_xgbm = xgbm.predict(X_test)
 write_submission('predictions/xgbm.csv', predicted_xgbm)
 
 print "Test results for vanilla xgb:", 0.74789
 
-#%% grid search
+#%% grid search xgb
 param = {}
-param['max_depth'] = 6
-param['learning_rate'] = 0.3
-param['n_estimators'] = 100
-param['objective'] = 'binary:logistic'
-param['gamma'] = 0
-param['min_child_weight']=1
-param['max_delta_step'] = 0
-param['subsample']= 1
-param['colsample_bytree']=1
-param['colsample_bylevel']=1
-param['scale_pos_weight']=1
-param['reg_alpha']=1
-param['reg_lambda']=1
+param['max_depth'] = [6,12,36]
+param['learning_rate'] = [0.3]
+param['n_estimators'] = [100,200]
+param['objective'] = ['binary:logistic']
+param['gamma'] = [0, 0.1,1]
+param['min_child_weight']=[1]
+param['max_delta_step'] = [0]
+param['subsample']= [1]
+param['colsample_bytree']=[1]
+param['colsample_bylevel']=[1]
+param['scale_pos_weight']=[1]
+param['reg_alpha']=[1]
+param['reg_lambda']=[1]
+
+print "Start grid search"
+start_time = time.time()
+gs_xgb = GridSearchCV(estimator=XGBModel(), \
+param_grid=param, scoring='roc_auc')
+gs_xgb.fit(X, target)
+print_time('GS XGB', start_time)
+
+predicted_gs_xgb = get_proba_one(gs_xgb, X_test)
+write_submission('predictions/gs_xgb.csv', predicted_gs_xgb)

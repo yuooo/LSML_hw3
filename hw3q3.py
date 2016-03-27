@@ -46,6 +46,12 @@ def get_proba_one(model, X):
     predicted = model.predict_proba(X)
     return predicted[:, 1]
 
+def start_time():
+    return time.time()
+
+def print_time(model_name, start_time):
+    t = time.time() - start_time
+    print("--- %s %s hours %s minutes %s seconds ---" % (model_name, t//3600, (t%3600)//60, t%60))
 
 #%% grid search rf
 print "Start grid search"
@@ -53,9 +59,9 @@ start_time = time.time()
 param_grid = {'n_estimators': np.linspace(100,1000,5).astype(int), \
 'min_samples_split' : [4,5,6,10]}
 gs = GridSearchCV(estimator=RandomForestClassifier(min_samples_leaf=1), \
-param_grid=param_grid)
+param_grid=param_grid, scoring='roc_auc')
 gs.fit(X, target)
-print("--- GS RF train %s seconds ---" % (time.time() - start_time))
+print_time('GS RF', start_time)
 
 predicted_gs_rf = get_proba_one(gs, X_test)
 write_submission('predictions/gs_rf.csv', predicted_gs_rf)
@@ -66,7 +72,7 @@ start_time = time.time()
 rf_tuned = RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, \
 n_estimators = 500)
 rf_tuned.fit(X,target)
-print("--- RF tuned train %s seconds ---" % (time.time() - start_time))
+print_time('RF tuned', start_time)
 
 predicted_rf_tuned = get_proba_one(rf_tuned, X_test)
 write_submission('predictions/rf_tuned.csv', predicted_rf_tuned)
@@ -76,10 +82,6 @@ print "Vanilla Logistic Regression ROC:", 0.53115
 print "Random Forest ROC:", 0.84669
 print "Random Forest 100 trees ROC:", 0.84731
 print "Random Forest GS 5,2,120 ROC:",0.86971
-
-
-
-
 
 
 
