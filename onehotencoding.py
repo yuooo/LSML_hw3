@@ -17,6 +17,7 @@ from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
 import pandas as pd
 import pickle
 import os
+from sklearn.ensemble import GradientBoostingClassifier
 
 # os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
 
@@ -62,6 +63,17 @@ def get_proba_one(model, X):
     predicted = model.predict_proba(X)
     return predicted[:, 1]
 
+def print_time(model_name, start_time):
+    t = time.time() - start_time
+    print("--- %s %s hours %s minutes %s seconds ---" % (model_name, t//3600, (t%3600)//60, t%60))
+
+def runModel(model, model_name, X, target, X_test):
+    start_time = time.time()
+    model.fit(X, target)
+    print_time(model_name, start_time)
+    
+    predicted = get_proba_one(model, X_test)
+    write_submission('predictions/%s.csv' % model_name, predicted)
 
  # %% grid search rf
 # print "Start grid search"
@@ -76,16 +88,33 @@ def get_proba_one(model, X):
 # predicted_gs_rf = get_proba_one(gs, X_test)
 # write_submission('predictions/gs_rf_ohe.csv', predicted_gs_rf)
 
- #%% Best Tuned RF
+#%% Best Tuned RF
 
 start_time = time.time()
 rf_tuned = RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, \
 n_estimators = 500)
 rf_tuned.fit(X,target)
-print("--- RF tuned train %s seconds ---" % (time.time() - start_time))
+print_time('RF tuned', start_time)
 
 predicted_rf_tuned = get_proba_one(rf_tuned, X_test)
 write_submission('predictions/rf_tuned_ohe.csv', predicted_rf_tuned)
+
+#%% GBC
+start_time = time.time()
+gbc = GradientBoostingClassifier(n_estimators=500, min_samples_split=5)
+gbc.fit(X, target)
+print_time('GBC', start_time)
+
+predicted_gbc = get_proba_one(gbc, X_test)
+write_submission('predictions/gbc_ohe.csv', predicted_gbc)
+
+#%% LR
+runModel(LogisticRegression(), 'lr', X.toarray(), target, X_test)
+
+#%%
+param_lr = {'C': [1.5, 2, 2.5, 3, 3.5, 5, 5.5],
+                           'class_weight': ['auto']}
+
 
  #%% results
 print "Vanilla Logistic Regression ROC:", 0.53115

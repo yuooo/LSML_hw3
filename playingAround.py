@@ -14,6 +14,7 @@ from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
 import pandas as pd
 import pickle
 import os
+from sklearn.ensemble import GradientBoostingClassifier
 
 #print "lapin"
 #
@@ -138,4 +139,13 @@ print "Random Forest train accuracy:", rf.score(X,target)
 #%% RF test
 predicted_rf = get_proba_one(rf, X_test)
 write_submission('predictions/rf.csv', predicted_rf)
+
+#%% GBC
+start_time = time.time()
+gbc = GradientBoostingClassifier(n_estimators=500, min_samples_split=5)
+gbc.fit(X, target)
+print("--- GBC train %s seconds ---" % (time.time() - start_time))
+
+predicted_gbc = get_proba_one(gbc, X_test)
+write_submission('predictions/gbc.csv', predicted_gbc)
 

@@ -11,7 +11,7 @@ import time
 import pandas as pd
 import pickle
 import os
-from xgboost import XGBModel
+from xgboost import XGBClassifier
 from hw3q3 import write_submission, print_time, get_proba_one
 
 os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
@@ -37,7 +37,7 @@ head = ['Id', 'Action']
 
 #%% vanilla xgb
 start_time = time.time()
-xgbm = XGBModel()
+xgbm = XGBClassifier()
 xgbm.fit(X, target)
 t = time.time() - start_time
 print("--- XGBM  %s hours %s minutes %s seconds ---" % (t//3600, (t%3600)//60, t%60))
@@ -49,23 +49,24 @@ print "Test results for vanilla xgb:", 0.74789
 
 #%% grid search xgb
 param = {}
-param['max_depth'] = [6,12,36]
-param['learning_rate'] = [0.3]
+param['max_depth'] = [6,12, 20]
+param['learning_rate'] = [0.3, 0.6]
 param['n_estimators'] = [100,200]
 param['objective'] = ['binary:logistic']
-param['gamma'] = [0, 0.1,1]
+param['gamma'] = [0, 0.1, 0.01, 1]
 param['min_child_weight']=[1]
 param['max_delta_step'] = [0]
-param['subsample']= [1]
+param['subsample']= [0.8, 0.9, 1]
 param['colsample_bytree']=[1]
 param['colsample_bylevel']=[1]
 param['scale_pos_weight']=[1]
-param['reg_alpha']=[1]
-param['reg_lambda']=[1]
+param['reg_alpha']=[0, 0.5, 1]
+param['reg_lambda']=[0, 0.5, 1]
+#param['eval_metric'] = ['auc'] 
 
 print "Start grid search"
 start_time = time.time()
-gs_xgb = GridSearchCV(estimator=XGBModel(), \
+gs_xgb = GridSearchCV(estimator=XGBClassifier(), \
 param_grid=param, scoring='roc_auc')
 gs_xgb.fit(X, target)
 print_time('GS XGB', start_time)
