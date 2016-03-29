@@ -49,19 +49,17 @@ print "Test results for vanilla xgb:", 0.74789
 
 #%% grid search xgb
 param = {}
-param['max_depth'] = [6,12, 20]
-param['learning_rate'] = [0.3, 0.6]
-param['n_estimators'] = [100,200]
+param['max_depth'] = [200]
+param['learning_rate'] = [1]
+param['n_estimators'] = [100]
 param['objective'] = ['binary:logistic']
-param['gamma'] = [0, 0.1, 0.01, 1]
+param['gamma'] = [0.5]
 param['min_child_weight']=[1]
-param['max_delta_step'] = [0]
-param['subsample']= [0.8, 0.9, 1]
-param['colsample_bytree']=[1]
-param['colsample_bylevel']=[1]
+param['subsample']= [1]
 param['scale_pos_weight']=[1]
-param['reg_alpha']=[0, 0.5, 1]
-param['reg_lambda']=[0, 0.5, 1]
+param['reg_alpha']=[1]
+param['reg_lambda']=[0.1]
+#param['booster'] = [gbtree, gblinear]
 #param['eval_metric'] = ['auc'] 
 
 print "Start grid search"

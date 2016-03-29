@@ -18,8 +18,10 @@ import pandas as pd
 import pickle
 import os
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import VotingClassifier
 
-# os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
+
+os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
 
 #%% Load/prepare data
 with open('train.csv') as data_train:
@@ -74,6 +76,7 @@ def runModel(model, model_name, X, target, X_test):
     
     predicted = get_proba_one(model, X_test)
     write_submission('predictions/%s.csv' % model_name, predicted)
+    return model
 
  # %% grid search rf
 # print "Start grid search"
@@ -88,32 +91,62 @@ def runModel(model, model_name, X, target, X_test):
 # predicted_gs_rf = get_proba_one(gs, X_test)
 # write_submission('predictions/gs_rf_ohe.csv', predicted_gs_rf)
 
+#%% RF grid search
+param_rf_ohe = {'n_estimators' : [400, 500, 600, 700], \
+'min_samples_split' : [5,7,10,12]}
+                           
+gs_rf_ohe = runModel(GridSearchCV(estimator=RandomForestClassifier(min_samples_leaf=1), \
+param_grid=param_rf_ohe, scoring='roc_auc'), \
+'gs_rf_ohe', X, target, X_test)                           
+
+
+
 #%% Best Tuned RF
-
-start_time = time.time()
-rf_tuned = RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, \
-n_estimators = 500)
-rf_tuned.fit(X,target)
-print_time('RF tuned', start_time)
-
-predicted_rf_tuned = get_proba_one(rf_tuned, X_test)
-write_submission('predictions/rf_tuned_ohe.csv', predicted_rf_tuned)
-
-#%% GBC
-start_time = time.time()
-gbc = GradientBoostingClassifier(n_estimators=500, min_samples_split=5)
-gbc.fit(X, target)
-print_time('GBC', start_time)
-
-predicted_gbc = get_proba_one(gbc, X_test)
-write_submission('predictions/gbc_ohe.csv', predicted_gbc)
-
-#%% LR
-runModel(LogisticRegression(), 'lr', X.toarray(), target, X_test)
+rf_tuned_ohe = runModel(RandomForestClassifier(min_samples_leaf=1, min_samples_split=5, \
+n_estimators = 500), \
+'rf_tuned_ohe', X, target, X_test)
 
 #%%
-param_lr = {'C': [1.5, 2, 2.5, 3, 3.5, 5, 5.5],
-                           'class_weight': ['auto']}
+param_rf = {'n_estimators' : [450, 475, 500, 525, 550]}
+rf_bagged_ohe = runModel(GridSearchCV(RandomForestClassifier(min_samples_leaf=1, min_samples_split=5), \
+param_grid=param_rf, scoring='roc_auc'), \
+'gs_rf_ohe', X, target, X_test)
+
+
+#%% GBC
+param_gbc_ohe = {'max_features': [4, 5, 6, 7], 'learning_rate': [.05, .08, .1], \
+'max_depth': [8, 10, 13]}
+
+gs_gbc_ohe = runModel(GridSearchCV(estimator=GradientBoostingClassifier(), \
+param_grid=param_gbc_ohe, scoring='roc_auc'), \
+'gs_gbc_ohe', X.toarray(), target, X_test.toarray()) 
+
+#%% Best gbc
+gbc_tuned = runModel(GradientBoostingClassifier(max_features = 6, learning_rate=.1, max_depth=8), \
+'gbc_tuned_ohe', X.toarray(), target, X_test.toarray())   
+
+   
+#%% GS_LR
+param_lr_ohe = {'C': [1.5, 2, 2.5, 3, 3.5, 5, 5.5]}
+                           
+gs_lr_ohe = runModel(GridSearchCV(estimator=LogisticRegression(class_weight='balanced'), \
+param_grid=param_lr_ohe, scoring='roc_auc'), \
+'gs_lr_ohe', X, target, X_test)                           
+
+#%% best lr
+lr_tuned_ohe = runModel(LogisticRegression(C=1.5, class_weight='balanced'), \
+'lr_ohe', X, target, X_test)  
+
+#%% SVC
+param_svm = {'C' : [0.09, 0.2, 0.3]}
+svm_linear008 = runModel(SVC(kernel='linear', probability=True, class_weight='balanced', C=0.08), \
+'gs_svm_linear', X, target, X_test)
+         
+
+#%% Voting classifier
+vc_ohe = runModel(VotingClassifier(estimators=[('lr', gs_lr_ohe), ('rf', rf_tuned_ohe)], \
+voting='soft'), 'vc_ohe', X, target, X_test)
+
 
 
  #%% results
@@ -121,3 +154,4 @@ print "Vanilla Logistic Regression ROC:", 0.53115
 print "Random Forest ROC:", 0.84669
 print "Random Forest 100 trees ROC:", 0.84731
 print "Random Forest GS 5,2,120 ROC:",0.86971
+print "OHE LR ROC:", 0.88161
