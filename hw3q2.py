@@ -34,32 +34,54 @@ x_test = dataset_test[:,1:]
 ID = (dataset_test[:,0]).astype(int)
 head = ['Id', 'Action']
 
-#%% vanilla xgb
-start_time = time.time()
-xgbm = XGBClassifier()
-xgbm.fit(X, target)
-t = time.time() - start_time
-print("--- XGBM  %s hours %s minutes %s seconds ---" % (t//3600, (t%3600)//60, t%60))
+#%% helper functions
+def write_submission(filename, predicted_proba):
+    submission = np.column_stack((ID, predicted_proba))
+    df = pd.DataFrame(data=submission, columns = head)
+    df['Id'] = df['Id'].astype('int')
+    df.to_csv(filename, index=False , header=head)
+    
+def get_proba_one(model, X):
+    predicted = model.predict_proba(X)
+    return predicted[:, 1]
 
-predicted_xgbm = xgbm.predict(X_test)
-write_submission('predictions/xgbm.csv', predicted_xgbm)
+def print_time(model_name, start_time):
+    t = time.time() - start_time
+    print("--- %s %s hours %s minutes %s seconds ---" % (model_name, t//3600, (t%3600)//60, t%60))
+
+def runModel(model, model_name, X, target, X_test):
+    start_time = time.time()
+    model.fit(X, target)
+    print_time(model_name, start_time)
+    
+    predicted = get_proba_one(model, X_test)
+    write_submission('predictions/%s.csv' % model_name, predicted)
+    return model
+
+#%% vanilla xgb
+xgb_vanilla = runModel(XGBClassifier(), \
+'xgb_vanilla', x, target, x_test)  
 
 print "Test results for vanilla xgb:", 0.74789
 
-#%% grid search xgb
-param = {}
-param['max_depth'] = [200,250,300,150]
-param['n_estimators'] = [100, 150, 50]
-param['colsample_bytree'] = [0.4]
-#param['booster'] = [gbtree, gblinear]
-#param['eval_metric'] = ['auc'] 
+##%% grid search xgb
+#param = {}
+#param['max_depth'] = [200,250,300,150]
+#param['n_estimators'] = [100, 150, 50]
+#param['colsample_bytree'] = [0.4]
+##param['booster'] = [gbtree, gblinear]
+##param['eval_metric'] = ['auc'] 
+#
+#print "Start grid search"
+#start_time = time.time()
+#gs_xgb = GridSearchCV(estimator=XGBClassifier(), \
+#param_grid=param, scoring='roc_auc')
+#gs_xgb.fit(x, target)
+#print_time('GS XGB', start_time)
+#
+#predicted_gs_xgb = get_proba_one(gs_xgb, x_test)
+#write_submission('predictions/gs_xgb.csv', predicted_gs_xgb)
 
-print "Start grid search"
-start_time = time.time()
-gs_xgb = GridSearchCV(estimator=XGBClassifier(), \
-param_grid=param, scoring='roc_auc')
-gs_xgb.fit(x, target)
-print_time('GS XGB', start_time)
-
-predicted_gs_xgb = get_proba_one(gs_xgb, x_test)
-write_submission('predictions/gs_xgb.csv', predicted_gs_xgb)
+#%% Best tuned XGB
+xgb_tuned_q2 = runModel(XGBClassifier(max_depth=200, n_estimators=100, colsample_bytree = 0.4), \
+'xgb_tuned_q2', x, target, x_test) 
