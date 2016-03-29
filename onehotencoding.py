@@ -19,7 +19,7 @@ import pickle
 import os
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import VotingClassifier
-
+import XGBClassifier
 
 os.chdir('/Users/jessicahoffmann/Desktop/Cours/UTAustin/S2/LargeScaleML/PS3')
 
@@ -29,7 +29,7 @@ with open('train.csv') as data_train:
     
 #print "Shape of the dataset:", dataset.shape
 
-X = dataset[:,1:]
+x = dataset[:,1:]
 target = dataset[:,0]
 
 # print X
@@ -37,7 +37,7 @@ target = dataset[:,0]
 # (num_rows, num_cols) = X.shape
 
 enc = OneHotEncoder(handle_unknown='ignore')
-X = enc.fit_transform(X)
+X = enc.fit_transform(x)
 
 # print X
 with open('test.csv') as data_test:
@@ -45,11 +45,11 @@ with open('test.csv') as data_test:
 
 # print "Shape of the test dataset:", dataset_test.shape
 
-X_test = dataset_test[:,1:]
+x_test = dataset_test[:,1:]
 
 
 # (num_rows, num_cols) = X_test.shape
-X_test = enc.transform(X_test)
+X_test = enc.transform(x_test)
 
 ID = (dataset_test[:,0]).astype(int)
 head = ['Id', 'Action']
@@ -106,7 +106,7 @@ rf_tuned_ohe = runModel(RandomForestClassifier(min_samples_leaf=1, min_samples_s
 n_estimators = 500), \
 'rf_tuned_ohe', X, target, X_test)
 
-#%%
+#%% bagged rf
 param_rf = {'n_estimators' : [450, 475, 500, 525, 550]}
 rf_bagged_ohe = runModel(GridSearchCV(RandomForestClassifier(min_samples_leaf=1, min_samples_split=5), \
 param_grid=param_rf, scoring='roc_auc'), \
@@ -139,19 +139,41 @@ lr_tuned_ohe = runModel(LogisticRegression(C=1.5, class_weight='balanced'), \
 
 #%% SVC
 param_svm = {'C' : [0.09, 0.2, 0.3]}
-svm_linear008 = runModel(SVC(kernel='linear', probability=True, class_weight='balanced', C=0.08), \
+svm_linear009 = runModel(SVC(kernel='linear', probability=True, class_weight='balanced', C=0.09), \
 'gs_svm_linear', X, target, X_test)
          
+#%% XBG
+xgb_tuned = runModel(XGBClassifier(max_depth=200, n_estimators=100, colsample_bytree = 0.4), \
+'xgb_tuned', x, target, x_test) 
 
 #%% Voting classifier
-vc_ohe = runModel(VotingClassifier(estimators=[('lr', gs_lr_ohe), ('rf', rf_tuned_ohe)], \
+vc_ohe = runModel(VotingClassifier(estimators=[('lr', lr_tuned_ohe), ('rf', rf_tuned_ohe), ('SVC', svm_linear009)], \
 voting='soft'), 'vc_ohe', X, target, X_test)
 
 
 
- #%% results
-print "Vanilla Logistic Regression ROC:", 0.53115
-print "Random Forest ROC:", 0.84669
-print "Random Forest 100 trees ROC:", 0.84731
-print "Random Forest GS 5,2,120 ROC:",0.86971
-print "OHE LR ROC:", 0.88161
+#%% Stacking
+rf_train = rf_tuned_ohe.predict_proba(X)
+#svc_train = svm_linear009.predict_proba(X)
+lr_train = lr_tuned_ohe.predict_proba(X)
+xgb_train = xgb_tuned.predict_proba(x)
+print "end train"
+
+rf_test = rf_tuned_ohe.predict_proba(X_test)
+#svc_test = svm_linear009.predict_proba(X_test)
+lr_test = lr_tuned_ohe.predict_proba(X_test)
+xgb_test = xgb_tuned.predict_proba(x_test)
+print "end test"
+
+stack = np.column_stack((rf_train, lr_train, xgb_train))
+stack_test = np.column_stack((rf_test, lr_test, xgb_test))
+
+print "end stacking"
+
+
+#%% LR on stack
+lr_stack = runModel(LogisticRegression(C=1.5, class_weight='balanced'), \
+'lr_stack', stack, target, stack_test)  
+
+
+
